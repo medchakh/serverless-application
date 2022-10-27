@@ -45,29 +45,26 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
   }
 
   onTodoCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
-    try {
-      const dueDate = this.calculateDueDate()
-      const newTodo = await createTodo(this.props.auth.getIdToken(), {
-        name: this.state.newTodoName,
-        dueDate
-      })
-      this.setState({
-        todos: [...this.state.todos, newTodo],
-        newTodoName: ''
-      })
-    } catch {
-      alert('Todo creation failed')
-    }
+    if (!this.state.newTodoName) return alert('please provide a name first')
+    const dueDate = await this.calculateDueDate()
+    const newTodo = await createTodo(this.props.auth.getIdToken(), {
+      name: this.state.newTodoName,
+      dueDate
+    })
+    this.setState({
+      newTodoName: '',
+      todos: [...this.state.todos, newTodo]
+    })
   }
 
   onTodoDelete = async (todoId: string) => {
     try {
       await deleteTodo(this.props.auth.getIdToken(), todoId)
       this.setState({
-        todos: this.state.todos.filter(todo => todo.todoId !== todoId)
+        todos: this.state.todos.filter((todo) => todo.todoId !== todoId)
       })
     } catch {
-      alert('Todo deletion failed')
+      // alert('Todo deletion failed')
     }
   }
 
@@ -85,11 +82,22 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
         })
       })
     } catch {
-      alert('Todo deletion failed')
+      //alert('Todo deletion failed')
     }
   }
 
   async componentDidMount() {
+    try {
+      const todos = await getTodos(this.props.auth.getIdToken())
+      this.setState({
+        todos,
+        loadingTodos: false
+      })
+    } catch (e) {
+      alert(`Failed to fetch todos: ${(e as Error).message}`)
+    }
+  }
+  async componentDidUpdate() {
     try {
       const todos = await getTodos(this.props.auth.getIdToken())
       this.setState({
